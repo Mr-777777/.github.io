@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数学小勇士：0-100加减法训练营</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义颜色和字体 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5', // 主色调：紫色
+                        secondary: '#EC4899', // 辅助色：粉色
+                        accent: '#F59E0B', // 强调色：橙色
+                        success: '#10B981', // 成功色：绿色
+                        danger: '#EF4444', // 错误色：红色
+                        light: '#F3F4F6', // 浅色背景
+                    },
+                    fontFamily: {
+                        comic: ['"Comic Sans MS"', '"Marker Felt"', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            }
+            .bounce-slow {
+                animation: bounce 2s infinite;
+            }
+            .float {
+                animation: float 3s ease-in-out infinite;
+            }
+            .pulse-slow {
+                animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen font-comic text-gray-800 overflow-x-hidden">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fa fa-shield text-accent text-2xl float"></i>
+                <h1 class="text-[clamp(1.2rem,3vw,1.8rem)] font-bold text-primary text-shadow">数学小勇士</h1>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1">
+                    <i class="fa fa-star text-accent"></i>
+                    <span id="stars" class="font-bold">0</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <i class="fa fa-trophy text-secondary"></i>
+                    <span id="score" class="font-bold">0</span>
+                </div>
+                <button id="settings-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                    <i class="fa fa-cog text-primary"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主游戏区域 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 关卡进度 -->
+        <div class="mb-8">
+            <div class="flex justify-between mb-2">
+                <span class="text-sm text-gray-600">当前关卡: <span id="level" class="font-bold text-primary">1</span></span>
+                <span class="text-sm text-gray-600">已完成: <span id="progress-text">0/10</span></span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                <div id="progress-bar" class="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <!-- 场景图片 -->
+        <div class="flex justify-center mb-6">
+            <img id="scene-image" src="https://picsum.photos/id/188/600/200" alt="数学森林" class="rounded-xl shadow-md max-w-full h-40 object-cover">
+        </div>
+        
+        <!-- 题目区域 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 transform transition-all hover:shadow-xl">
+            <div class="flex justify-center items-center mb-6">
+                <div id="question" class="text-[clamp(2rem,8vw,4rem)] font-bold text-center min-h-[100px] flex items-center justify-center">
+                    7 + 5 = ?
+                </div>
+            </div>
+            
+            <!-- 答案选项 -->
+            <div class="grid grid-cols-3 gap-4" id="answers">
+                <button class="answer-btn bg-light hover:bg-primary/10 text-xl md:text-2xl py-4 px-2 rounded-xl transition-all transform hover:scale-105 active:scale-95">12</button>
+                <button class="answer-btn bg-light hover:bg-primary/10 text-xl md:text-2xl py-4 px-2 rounded-xl transition-all transform hover:scale-105 active:scale-95">10</button>
+                <button class="answer-btn bg-light hover:bg-primary/10 text-xl md:text-2xl py-4 px-2 rounded-xl transition-all transform hover:scale-105 active:scale-95">14</button>
+            </div>
+        </div>
+        
+        <!-- 反馈区域 (默认隐藏) -->
+        <div id="feedback" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center transform transition-all">
+                <div id="feedback-icon" class="text-6xl mb-4">🎉</div>
+                <h2 id="feedback-message" class="text-2xl font-bold mb-6">太棒了！</h2>
+                <p id="feedback-details" class="text-gray-600 mb-6">你获得了10分！</p>
+                <button id="next-btn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105">
+                    下一题
+                </button>
+            </div>
+        </div>
+        
+        <!-- 难度选择 (默认隐藏) -->
+        <div id="difficulty-selector" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+                <h2 class="text-2xl font-bold mb-6 text-center">选择难度</h2>
+                <div class="grid grid-cols-1 gap-4">
+                    <button class="difficulty-btn bg-light hover:bg-primary/10 text-xl py-4 px-2 rounded-xl transition-all text-left" data-range="20">
+                        <i class="fa fa-leaf text-success mr-2"></i>
+                        入门级 (1-20)
+                    </button>
+                    <button class="difficulty-btn bg-light hover:bg-primary/10 text-xl py-4 px-2 rounded-xl transition-all text-left" data-range="50">
+                        <i class="fa fa-tree text-accent mr-2"></i>
+                        进阶级 (1-50)
+                    </button>
+                    <button class="difficulty-btn bg-light hover:bg-primary/10 text-xl py-4 px-2 rounded-xl transition-all text-left" data-range="100">
+                        <i class="fa fa-mountain text-primary mr-2"></i>
+                        挑战级 (1-100)
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 设置面板 (默认隐藏) -->
+        <div id="settings-panel" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+                <h2 class="text-2xl font-bold mb-6 text-center">游戏设置</h2>
+                
+                <div class="mb-6">
+                    <h3 class="font-bold mb-2">答题模式</h3>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="mode" value="unlimited" checked class="accent-primary">
+                            <span>不限时</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="mode" value="timed" class="accent-primary">
+                            <span>限时30秒</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="font-bold mb-2">题目类型</h3>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="additions" checked class="accent-primary">
+                            <span>加法</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="subtractions" checked class="accent-primary">
+                            <span>减法</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <button id="change-difficulty-btn" class="w-full bg-light hover:bg-primary/10 text-lg py-3 px-2 rounded-xl transition-all">
+                        更改难度
+                    </button>
+                </div>
+                
+                <button id="close-settings-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full transition-all">
+                    保存设置
+                </button>
+            </div>
+        </div>
+        
+        <!-- 关卡完成庆祝 (默认隐藏) -->
+        <div id="level-complete" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center">
+                <div class="text-6xl mb-4">🏆</div>
+                <h2 class="text-2xl font-bold mb-2">关卡完成！</h2>
+                <p class="text-gray-600 mb-6">你成功闯过了第 <span id="completed-level">1</span> 关！</p>
+                <p class="text-accent font-bold mb-6">获得了 <span id="level-stars">1</span> 颗星星奖励！</p>
+                <button id="next-level-btn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105">
+                    进入下一关
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white/80 backdrop-blur-md py-4 mt-8">
+        <div class="container mx-auto px-4 text-center text-gray-600 text-sm">
+            <p>数学小勇士训练营 &copy; 2023 - 让学习数学更有趣</p>
+        </div>
+    </footer>
+
+    <script>
+        // 游戏状态
+        const gameState = {
+            score: 0,
+            stars: 0,
+            level: 1,
+            currentQuestion: 0,
+            questionsPerLevel: 10,
+            maxNumber: 20, // 默认难度：1-20
+            currentAnswer: null,
+            correctStreak: 0,
+            settings: {
+                timedMode: false,
+                includeAdditions: true,
+                includeSubtractions: true
+            },
+            timer: null
+        };
+
+        // DOM 元素
+        const elements = {
+            question: document.getElementById('question'),
+            answers: document.getElementById('answers'),
+            answerButtons: document.querySelectorAll('.answer-btn'),
+            feedback: document.getElementById('feedback'),
+            feedbackIcon: document.getElementById('feedback-icon'),
+            feedbackMessage: document.getElementById('feedback-message'),
+            feedbackDetails: document.getElementById('feedback-details'),
+            nextBtn: document.getElementById('next-btn'),
+            scoreDisplay: document.getElementById('score'),
+            starsDisplay: document.getElementById('stars'),
+            levelDisplay: document.getElementById('level'),
+            progressBar: document.getElementById('progress-bar'),
+            progressText: document.getElementById('progress-text'),
+            sceneImage: document.getElementById('scene-image'),
+            settingsBtn: document.getElementById('settings-btn'),
+            settingsPanel: document.getElementById('settings-panel'),
+            closeSettingsBtn: document.getElementById('close-settings-btn'),
+            changeDifficultyBtn: document.getElementById('change-difficulty-btn'),
+            difficultySelector: document.getElementById('difficulty-selector'),
+            difficultyButtons: document.querySelectorAll('.difficulty-btn'),
+            levelComplete: document.getElementById('level-complete'),
+            completedLevel: document.getElementById('completed-level'),
+            levelStars: document.getElementById('level-stars'),
+            nextLevelBtn: document.getElementById('next-level-btn')
+        };
+
+        // 场景图片数组 - 随关卡变化
+        const sceneImages = [
+            'https://picsum.photos/id/188/600/200', // 数学森林
+            'https://picsum.photos/id/29/600/200',  // 数字草原
+            'https://picsum.photos/id/110/600/200', // 数学城堡
+            'https://picsum.photos/id/133/600/200', // 计算山脉
+            'https://picsum.photos/id/164/600/200'  // 智慧海洋
+        ];
+
+        // 初始化游戏
+        function initGame() {
+            updateUI();
+            generateQuestion();
+            setupEventListeners();
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 答案按钮点击事件
+            elements.answers.addEventListener('click', (e) => {
+                if (e.target.classList.contains('answer-btn')) {
+                    checkAnswer(parseInt(e.target.textContent));
+                }
+            });
+
+            // 下一题按钮
+            elements.nextBtn.addEventListener('click', () => {
+                elements.feedback.classList.add('hidden');
+                clearTimeout(gameState.timer);
+                generateQuestion();
+            });
+
+            // 设置按钮
+            elements.settingsBtn.addEventListener('click', () => {
+                elements.settingsPanel.classList.remove('hidden');
+                // 更新设置面板状态
+                document.querySelector('input[name="mode"][value="timed"]').checked = gameState.settings.timedMode;
+                document.querySelector('input[name="mode"][value="unlimited"]').checked = !gameState.settings.timedMode;
+                document.getElementById('additions').checked = gameState.settings.includeAdditions;
+                document.getElementById('subtractions').checked = gameState.settings.includeSubtractions;
+            });
+
+            // 关闭设置面板
+            elements.closeSettingsBtn.addEventListener('click', () => {
+                // 保存设置
+                gameState.settings.timedMode = document.querySelector('input[name="mode"][value="timed"]').checked;
+                gameState.settings.includeAdditions = document.getElementById('additions').checked;
+                gameState.settings.includeSubtractions = document.getElementById('subtractions').checked;
+                
+                // 验证至少选择一种题目类型
+                if (!gameState.settings.includeAdditions && !gameState.settings.includeSubtractions) {
+                    alert('请至少选择一种题目类型（加法或减法）');
+                    return;
+                }
+                
+                elements.settingsPanel.classList.add('hidden');
+            });
+
+            // 更改难度按钮
+            elements.changeDifficultyBtn.addEventListener('click', () => {
+                elements.settingsPanel.classList.add('hidden');
+                elements.difficultySelector.classList.remove('hidden');
+            });
+
+            // 难度选择按钮
+            elements.difficultyButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    gameState.maxNumber = parseInt(btn.dataset.range);
+                    elements.difficultySelector.classList.add('hidden');
+                    resetLevel();
+                    generateQuestion();
+                });
+            });
+
+            // 下一关按钮
+            elements.nextLevelBtn.addEventListener('click', () => {
+                elements.levelComplete.classList.add('hidden');
+                gameState.level++;
+                gameState.currentQuestion = 0;
+                updateUI();
+                generateQuestion();
+            });
+        }
+
+        // 生成题目
+        function generateQuestion() {
+            gameState.currentQuestion++;
+            
+            // 检查是否完成当前关卡
+            if (gameState.currentQuestion > gameState.questionsPerLevel) {
+                completeLevel();
+                return;
+            }
+            
+            updateUI();
+            
+            let num1, num2, operator, answer;
+            let isAddition;
+            
+            // 随机选择加法或减法（根据设置）
+            if (gameState.settings.includeAdditions && gameState.settings.includeSubtractions) {
+                isAddition = Math.random() > 0.5;
+            } else {
+                isAddition = gameState.settings.includeAdditions;
+            }
+            
+            if (isAddition) {
+                // 加法：确保和不超过最大数字
+                num1 = Math.floor(Math.random() * gameState.maxNumber / 2) + 1;
+                num2 = Math.floor(Math.random() * (gameState.maxNumber - num1)) + 1;
+                operator = '+';
+                answer = num1 + num2;
+            } else {
+                // 减法：确保结果不为负数
+                num2 = Math.floor(Math.random() * gameState.maxNumber / 2) + 1;
+                num1 = Math.floor(Math.random() * (gameState.maxNumber - num2)) + num2;
+                operator = '-';
+                answer = num1 - num2;
+            }
+            
+            gameState.currentAnswer = answer;
+            
+            // 显示题目
+            elements.question.textContent = `${num1} ${operator} ${num2} = ?`;
+            
+            // 生成答案选项（1个正确，2个干扰）
+            const options = [answer];
+            
+            // 确保干扰项在合理范围内且不重复
+            while (options.length < 3) {
+                let variation = Math.floor(Math.random() * 5) + 1;
+                if (Math.random() > 0.5) variation = -variation;
+                
+                const option = answer + variation;
+                
+                // 确保选项是正数且不在已有选项中
+                if (option >= 0 && !options.includes(option)) {
+                    options.push(option);
+                }
+            }
+            
+            // 随机排序选项
+            options.sort(() => Math.random() - 0.5);
+            
+            // 更新答案按钮
+            const answerButtons = elements.answers.querySelectorAll('.answer-btn');
+            answerButtons.forEach((btn, index) => {
+                btn.textContent = options[index];
+                btn.className = 'answer-btn bg-light hover:bg-primary/10 text-xl md:text-2xl py-4 px-2 rounded-xl transition-all transform hover:scale-105 active:scale-95';
+            });
+            
+            // 如果是限时模式，设置计时器
+            if (gameState.settings.timedMode) {
+                let timeLeft = 30;
+                
+                // 创建计时器元素
+                const timerElement = document.createElement('div');
+                timerElement.id = 'timer';
+                timerElement.className = 'absolute top-20 right-4 bg-accent text-white px-3 py-1 rounded-full text-sm font-bold';
+                timerElement.textContent = `⏰ ${timeLeft}s`;
+                document.body.appendChild(timerElement);
+                
+                // 清除之前的计时器
+                clearTimeout(gameState.timer);
+                
+                // 设置新计时器
+                const countdown = setInterval(() => {
+                    timeLeft--;
+                    timerElement.textContent = `⏰ ${timeLeft}s`;
+                    
+                    // 时间快用完时变红
+                    if (timeLeft <= 5) {
+                        timerElement.classList.remove('bg-accent');
+                        timerElement.classList.add('bg-danger');
+                    }
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(countdown);
+                        document.body.removeChild(timerElement);
+                        // 时间到了，视为答错
+                        showFeedback(false);
+                    }
+                }, 1000);
+                
+                gameState.timer = countdown;
+            }
+        }
+
+        // 检查答案
+        function checkAnswer(userAnswer) {
+            // 清除计时器
+            if (gameState.settings.timedMode) {
+                clearInterval(gameState.timer);
+                const timerElement = document.getElementById('timer');
+                if (timerElement) {
+                    document.body.removeChild(timerElement);
+                }
+            }
+            
+            const isCorrect = userAnswer === gameState.currentAnswer;
+            
+            // 更新答案按钮样式
+            const answerButtons = elements.answers.querySelectorAll('.answer-btn');
+            answerButtons.forEach(btn => {
+                const value = parseInt(btn.textContent);
+                if (value === gameState.currentAnswer) {
+                    btn.classList.add('bg-success', 'text-white');
+                } else if (value === userAnswer) {
+                    btn.classList.add('bg-danger', 'text-white');
+                }
+            });
+            
+            // 显示反馈
+            setTimeout(() => {
+                showFeedback(isCorrect);
+            }, 800);
+        }
+
+        // 显示反馈
+        function showFeedback(isCorrect) {
+            if (isCorrect) {
+                // 答对了
+                gameState.score += 10;
+                gameState.correctStreak++;
+                
+                // 连续答对5题奖励一颗星星
+                if (gameState.correctStreak % 5 === 0) {
+                    gameState.stars += 1;
+                    elements.feedbackIcon.textContent = '⭐';
+                    elements.feedbackMessage.textContent = '太棒了！';
+                    elements.feedbackDetails.textContent = `你获得了10分，并且获得了1颗星星奖励！（连续答对${gameState.correctStreak}题）`;
+                } else {
+                    elements.feedbackIcon.textContent = '🎉';
+                    elements.feedbackMessage.textContent = '答对了！';
+                    elements.feedbackDetails.textContent = `你获得了10分！（连续答对${gameState.correctStreak}题）`;
+                }
+            } else {
+                // 答错了
+                gameState.correctStreak = 0;
+                elements.feedbackIcon.textContent = '😢';
+                elements.feedbackMessage.textContent = '再试一次！';
+                elements.feedbackDetails.textContent = `正确答案是 ${gameState.currentAnswer}`;
+            }
+            
+            updateUI();
+            elements.feedback.classList.remove('hidden');
+        }
+
+        // 完成关卡
+        function completeLevel() {
+            // 根据表现奖励星星
+            const levelStars = Math.min(3, Math.floor(gameState.score / 30));
+            gameState.stars += levelStars;
+            
+            elements.completedLevel.textContent = gameState.level;
+            elements.levelStars.textContent = levelStars;
+            elements.levelComplete.classList.remove('hidden');
+            
+            updateUI();
+        }
+
+        // 重置当前关卡
+        function resetLevel() {
+            gameState.currentQuestion = 0;
+            updateUI();
+        }
+
+        // 更新UI
+        function updateUI() {
+            elements.scoreDisplay.textContent = gameState.score;
+            elements.starsDisplay.textContent = gameState.stars;
+            elements.levelDisplay.textContent = gameState.level;
+            
+            // 更新进度
+            const progressPercent = (gameState.currentQuestion / gameState.questionsPerLevel) * 100;
+            elements.progressBar.style.width = `${progressPercent}%`;
+            elements.progressText.textContent = `${gameState.currentQuestion}/${gameState.questionsPerLevel}`;
+            
+            // 更新场景图片（根据关卡）
+            const sceneIndex = (gameState.level - 1) % sceneImages.length;
+            elements.sceneImage.src = sceneImages[sceneIndex];
+        }
+
+        // 启动游戏
+        window.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
